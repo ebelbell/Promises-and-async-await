@@ -34,12 +34,12 @@ async function getUserData(id) {
       }
 
 // Fetch data from the identified database and vault in parallel
-//the central database returns a string that identifies which database to access the user's info
   const [basicInfo, personalInfo] = await Promise.all([
     dbs[dbName](id),
     vault(id),
   ]);
 
+  //the central database returns a string that identifies which database to access the user's info
   const data = {
     id: id,
     name: personalInfo.name,
