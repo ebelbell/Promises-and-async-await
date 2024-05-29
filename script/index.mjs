@@ -7,13 +7,12 @@ Use Promises to handle asynchronous code. */
 // the central database identifies which database the users are stored within
 import { central, db1, db2, db3, vault } from "./databases.mjs";
 
-function getUserData(id) { //simple dictionary object
+//simple dictionary object from the database script 
   const dbs = {
     db1: db1,
     db2: db2,
     db3: db3
   };
-}
 
 /***********SCENARIO #1: 
 You are a developer in a very large corporation that splits its data across multiple databases. 
@@ -24,54 +23,62 @@ which will be gathered from the databases: ****************/
 
 // create a function that takes an id parameter 
 // and returns a Promise that resolves to an object containing specific data. 
-function resolveObjectData(resolve) {
+async function getUserData(id) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      // Get the database identifier from the central database
+      const dbName = await central(id);
+
+      if (!dbs[dbName]) {
+        throw new Error(`Database ${dbName} is not available`);
+      }
+
+// Fetch data from the identified database and vault in parallel
+//the central database returns a string that identifies which database to access the user's info
+  const [basicInfo, personalInfo] = await Promise.all([
+    dbs[dbName](id),
+    vault(id),
+  ]);
+
   const data = {
-    id: number,
-    name: string,
-    username: string,
-    email: string,
+    id: id,
+    name: personalInfo.name,
+    username: basicInfo.username,
+    email: personalInfo.email,
     address: {
-      street: string,
-      suite: string,
-      city: string,
-      zipcode: string,
+      street: personalInfo.address.street,
+      suite: personalInfo.address.suite,
+      city: personalInfo.address.city,
+      zipcode: personalInfo.address.zipcode,
       geo: {
-        lat: string,
-        lng: string
+        lat: personalInfo.address.geo.lat,
+        lng: personalInfo.address.geo.lng
       }
     },
-    phone: string,
-    website: string,
+    phone: personalInfo.phone,
+    website: basicInfo.website,
     company: {
-      name: string,
-      catchPhrase: string,
-      bs: string
+      name: basicInfo.company.name,
+      catchPhrase: basicInfo.company.catchPhrase,
+      bs: basicInfo.company.bs
     }
-  }
-  resolve(data);
+  };
+
+    resolve(data);
+    } catch (error) {
+      reject(`Failed to fetch user data: ${error.message}`);
+    }
+  });
 }
 
-//the central database returns a string that identifies which database to access the user's info
-const returnedValue = await central(id);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//access the central database
-const returnedValue = await central (id);
-
-returnedValue.then((data) => {
-  console.log(`${data} has been accessed`); //return a string message if the data passes the returnedValue function
+// Example usage
+getUserData(1).then(data => {
+  console.log(data);
+}).catch(error => {
+  console.error('Failed to get user data:', error);
 });
+
+
+//join the vaults and database in another object
+
+//grab the other ids from the database
